@@ -2,9 +2,9 @@ import pandas as pd
 
 
 def chunking_emails():
-    # here i sliced the csv data into a 3000 email chunk only because the original number is a lot for the memory
+    # here i sliced the csv data into a 5000 email chunk only because the original number is a lot for the memory
     file_path = '/Users/macbookpro/Desktop/INNObyte/modules/emails/emails.csv'
-    emails_chunked = pd.read_csv(file_path, nrows=3000)
+    emails_chunked = pd.read_csv(file_path, nrows=500)
     # print(emails_chunked)
     return emails_chunked
 
@@ -18,11 +18,13 @@ def parser_email(emails_cut):
     lines = emails_cut.split('\n')
     email = {}
     message = ''
-    keys_to_extract = ['from,' 'to']
+    keys_to_extract = ['from', 'to']
+
     for line in lines:
         if ':' not in line:
             message += line.strip()
             email['body'] = message
+
         else:
             pairs = line.split(':')
             key = pairs[0].lower()
@@ -60,5 +62,17 @@ def map_to_list(emails, key):
 email_df = pd.DataFrame(parse_into_emails(emails_cut.message))
 # the line below is a filter to keep only emails which has body, to and from keys non empty
 # due to something wrong it is not working correctly i will fix it ASAP
-#email_df.drop(email_df.query("body == '' | to == '' | from_ == ''").index, inplace=True)
-print(email_df)
+# update, it is fixed and now the data is filtered to 4818 email instead of 5000
+email_df.drop(email_df.query("body == '' | to == '' | from_ == ''").index, inplace=True)
+
+
+def emails_df_body():
+    return email_df.body
+
+
+def emails_df_to():
+    return email_df.to
+
+
+def emails_df_from_():
+    return email_df.from_
