@@ -1,18 +1,22 @@
 import pandas as pd
 
+"""First i sliced the csv data into a 5000 email chunk only
+ because the original number is a lot for the memory to work with.
+"""
+
 
 def chunking_emails():
-    # here i sliced the csv data into a 5000 email chunk only because the original number is a lot for the memory
+
     file_path = '/Users/macbookpro/Desktop/INNObyte/modules/emails/emails.csv'
-    emails_chunked = pd.read_csv(file_path, nrows=500)
+    emails_chunked = pd.read_csv(file_path, nrows=5000)
     # print(emails_chunked)
     return emails_chunked
 
 
 emails_cut = chunking_emails()
 
-# this function will extract the keys we will work with which are 'body' 'to' 'from'
 
+# this function will extract the keys we will work with which are 'body' 'to' 'from'
 
 def parser_email(emails_cut):
     lines = emails_cut.split('\n')
@@ -44,8 +48,8 @@ def parse_into_emails(messages):
         'from_': map_to_list(emails, 'from')
     }
 
-# this function will be used in parse_into_emails to make it add key_value pairs for each key existing in email
 
+# this function will be used in parse_into_emails to make it add key_value pairs for each key existing in email
 
 def map_to_list(emails, key):
     results = []
@@ -60,11 +64,13 @@ def map_to_list(emails, key):
 
 
 email_df = pd.DataFrame(parse_into_emails(emails_cut.message))
-# the line below is a filter to keep only emails which has body, to and from keys non empty
-# due to something wrong it is not working correctly i will fix it ASAP
-# update, it is fixed and now the data is filtered to 4818 email instead of 5000
+
+# now the data is filtered to 4818 email instead of 5000 after
 email_df.drop(email_df.query("body == '' | to == '' | from_ == ''").index, inplace=True)
 
+"""Functions below are getters for emails body, sender
+and receiver data.
+"""
 
 def emails_df_body():
     return email_df.body

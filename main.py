@@ -1,6 +1,11 @@
-# This project is a proof of concept for the Email Classifier project assigned by INNObyte
 
-from modules.classifier import *
+
+""" This project is a proof of concept for the Email Classifier project assigned by INNObyte.
+It is made of different seperate modules which will be called here in main to achieve
+the desired task.
+Check the readme.md and the flowchart for clearer details.
+"""
+
 
 def main():
     # the first step is to fetch the requested email and return it in a list. this module will be added in the end.
@@ -21,4 +26,6 @@ def main():
     return 1
 
 
-main()
+if __name__ == '__main__':
+
+    pass
