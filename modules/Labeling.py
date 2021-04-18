@@ -21,6 +21,8 @@ def create_new_df():
     return 0
 # Call only when dataframe size changed
 # create_new_df()
+
+
 df = pd.read_csv(path + filename)
 
 # vector creation
@@ -30,30 +32,55 @@ vec_train = vec.fit_transform(df.body)
 
 # find related emails by using cosine similarity to a specific keyword taken from classifier.py module
 
-keyword = "meeting"
+# View related emails index and their content
+def view_related_emails(keyword):
+    # Transform keyword to vector
+    vec_query = vec.transform([keyword])
+    cosine_sim = linear_kernel(vec_query, vec_train).flatten()
+    # get 100 most related emails
+    related_email_indices = cosine_sim.argsort()[:-100:-1]
+    print("number of related emails to word :", keyword, " ", related_email_indices)
+    for index in related_email_indices:
+        print("index : ", index)
+        print(" related email : ", df.body[index])
+    return 0
 
-# Transform keyword to vector
-vec_query = vec.transform([keyword])
 
-cosine_sim = linear_kernel(vec_query, vec_train).flatten()
+# add top 100 related emails to a list of each type
+def add_emails_related(keywords):
+    arr = []
+    for keyword in keywords:
+        vec_query = vec.transform([keyword])
+        cosine_sim = linear_kernel(vec_query, vec_train).flatten()
+        related_email_indices = cosine_sim.argsort()[:-100:-1]
+        for index in related_email_indices:
+            arr.append(df.body[index])
+    return arr
 
-# Find top 100 most related emails to the query.
-related_email_indices = cosine_sim.argsort()[:-200:-1]
-print("related emails to word :", keyword, " ", related_email_indices)
 
-# print out the first email
-# first_email_index = related_email_indices[0]
+# Here i created a bag of words which contains words of similar context that emails belong to for making categories
+notifying = ['receive', 'update', 'confirm', 'receipt', 'inform', 'notify', 'inform']
+issue = ['bad', "can 't", 'as issue', 'mistake', 'fault', 'problem', 'worried', 'complain']
+request = ['please', 'can you', 'request', 'demand', 'would like']
+meeting = ['meeting', 'conference', 'invite', 'arrange', 'call']
 
-# printing the emails related to that topic
-for i in range(10):
-    print(df.body.to_numpy()[related_email_indices[i]])
+# create lists of emails by category
+notifying_emails = add_emails_related(notifying)
+issue_emails = add_emails_related(issue)
+request_emails = add_emails_related(request)
+meeting_emails = add_emails_related(meeting)
 
-# Here i created a bag of words which contains words of similar context that emails belong to for making a category from each
-update = ['receive', 'update', 'confirm', 'receipt']
-problem = ['bad', "can 't", 'issue', 'mistake', 'fault']
-request = ['please', 'can you', 'request', 'demand']
-meeting = ['meeting', 'conference', 'invite']
+print(len(notifying_emails))
+print(len(issue_emails))
+print(request_emails[1])
+print(meeting_emails[1])
+# removing duplicates
 
 # enumerating the categories
-# Categories = {update: 0, problem: 1, request: 2}
+Categories = {'notifying': 0, 'issue': 1, 'request': 2, 'meeting': 3}
+
 # Next step is to create a new dataframe of around 200 emails Categorized after getting rid of duplicates.
+data = {
+    'Emails content': []
+}
+# by assigning each email content by its index to the category and creating a new list for dataframe
