@@ -5,7 +5,7 @@ depending on results from the classifier.py module.
 from sklearn.feature_extraction.text import TfidfVectorizer, ENGLISH_STOP_WORDS
 from sklearn.metrics.pairwise import linear_kernel
 import pandas as pd
-
+import numpy as np
 from modules.chunks import email_df
 from modules.tools import *
 
@@ -70,17 +70,55 @@ issue_emails = add_emails_related(issue)
 request_emails = add_emails_related(request)
 meeting_emails = add_emails_related(meeting)
 
-print(len(notifying_emails))
-print(len(issue_emails))
-print(request_emails[1])
-print(meeting_emails[1])
+print('before ', len(notifying_emails))
+print('before ', len(issue_emails))
+print('before ', len(request_emails))
+print('before ', len(meeting_emails))
+
 # removing duplicates
+notifying_emails = list(set(notifying_emails))
+issue_emails = list(set(issue_emails))
+request_emails = list(set(request_emails))
+meeting_emails = list(set(meeting_emails))
+
+print('after ', len(notifying_emails))
+print('after ', len(issue_emails))
+print('after ', len(request_emails))
+print('after ', len(meeting_emails))
 
 # enumerating the categories
 Categories = {'notifying': 0, 'issue': 1, 'request': 2, 'meeting': 3}
 
 # Next step is to create a new dataframe of around 200 emails Categorized after getting rid of duplicates.
-data = {
-    'Emails content': []
-}
+# Xored = set(notifying_emails) ^ set(issue_emails) ^ set(request_emails) ^ set(meeting_emails)
+# print('XOR ', len(Xored))
+# After XORing the emails to find out how many total unique emails there are it was only 500 emails
+# which is not good enough to train the model so i will just work with some duplicated ones
+
+#creates a new dataframe for each emails category
+def dataframe_category(category,cat_emails):
+    cat_list = []
+    for i in cat_emails:
+        cat_list.append(category)
+    data_list = {
+    'body': cat_emails,
+    'category': cat_list
+    }
+    df_category = pd.DataFrame(data_list, columns=['body', 'category'])
+    return df_category
+
+# combining emails dataframes in one dataframe
+def combine_dataframe():
+    df_notifying = dataframe_category('notifying', notifying_emails)
+    df_issue = dataframe_category('issue', issue_emails)
+    df_request = dataframe_category('request', request_emails)
+    df_meeting = dataframe_category('meeting', meeting_emails)
+
+    df_final = df_notifying.append([df_issue, df_request, df_meeting])
+    return df_final
+
+df_final = combine_dataframe()
+print(df_final)
+
+df_final.to_csv(r'/Users/macbookpro/Desktop/INNObyte/modules/categorized_emails.csv')
 # by assigning each email content by its index to the category and creating a new list for dataframe
