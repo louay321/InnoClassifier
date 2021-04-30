@@ -5,7 +5,6 @@ depending on results from the classifier.py module.
 from sklearn.feature_extraction.text import TfidfVectorizer, ENGLISH_STOP_WORDS
 from sklearn.metrics.pairwise import linear_kernel
 import pandas as pd
-import numpy as np
 from modules.chunks import email_df
 from modules.tools import *
 
@@ -120,5 +119,5 @@ def combine_dataframe():
 df_final = combine_dataframe()
 print(df_final)
 
-df_final.to_csv(r'/Users/macbookpro/Desktop/INNObyte/modules/categorized_emails.csv')
+# df_final.to_csv(r'/Users/macbookpro/Desktop/INNObyte/modules/categorized_emails.csv')
 # by assigning each email content by its index to the category and creating a new list for dataframe
