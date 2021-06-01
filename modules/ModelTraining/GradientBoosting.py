@@ -1,19 +1,23 @@
 """
-In this part i used RF (random forest) training method on the model
+In this part i used GBM (Gradient Boosting Machine) training method on the model
 which i will later compare with other methods and see which gives best results
 to be implemented for the main prediction model.
 """
 
 import pickle
 import numpy as np
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.ensemble import GradientBoostingClassifier
+from pprint import pprint
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 from sklearn.model_selection import ShuffleSplit
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
 
-#Data load
-
+# Dataframe
 path_df = "/Users/macbookpro/Desktop/INNObyte/modules/Pickles/df.pickle"
 with open(path_df, 'rb') as data:
     df = pickle.load(data)
@@ -38,91 +42,88 @@ path_labels_test = "/Users/macbookpro/Desktop/INNObyte/modules/Pickles/labels_te
 with open(path_labels_test, 'rb') as data:
     labels_test = pickle.load(data)
 
-#Tuning the hyperparameter phase
-rf1 = RandomForestClassifier(random_state = 8)
-# view the current parameters
-# pprint(rf1.get_params())
 
-# some changes on the rf parameters
 # n_estimators
-n_estimators = [int(x) for x in np.linspace(start = 200, stop = 1000, num = 5)]
+n_estimators = [200, 800]
 
 # max_features
 max_features = ['auto', 'sqrt']
 
 # max_depth
-max_depth = [int(x) for x in np.linspace(20, 100, num = 5)]
+max_depth = [10, 40]
 max_depth.append(None)
 
 # min_samples_split
-min_samples_split = [2, 5, 10]
+min_samples_split = [10, 30, 50]
 
 # min_samples_leaf
 min_samples_leaf = [1, 2, 4]
 
-# bootstrap
-bootstrap = [True, False]
+# learning rate
+learning_rate = [.1, .5]
 
-# grid creation
-rf_grid = {'n_estimators': n_estimators,
+# subsample
+subsample = [.5, 1.]
+
+# Create the random grid
+random_grid = {'n_estimators': n_estimators,
                'max_features': max_features,
                'max_depth': max_depth,
                'min_samples_split': min_samples_split,
                'min_samples_leaf': min_samples_leaf,
-               'bootstrap': bootstrap}
+               'learning_rate': learning_rate,
+               'subsample': subsample}
 
-# pprint(rf_grid)
+pprint(random_grid)
 
-# model to tune
-rf_c = RandomForestClassifier(random_state=8)
+# First create the base model to tune
+gbc = GradientBoostingClassifier(random_state=8)
 
-# random search define
-random_search = RandomizedSearchCV(estimator=rf_c,
-                                   param_distributions=rf_grid,
+# Definition of the random search
+random_search = RandomizedSearchCV(estimator=gbc,
+                                   param_distributions=random_grid,
                                    n_iter=50,
                                    scoring='accuracy',
                                    cv=3,
                                    verbose=1,
                                    random_state=8)
-"""
-# fit the model with training features and labels (this may take a while)
+
+# Fit the random search model
 random_search.fit(features_train, labels_train)
-# get hyperparameters
+
 print("The best hyperparameters from Random Search are:")
 print(random_search.best_params_)
-print("")
 print("The mean accuracy of a model with these hyperparameters is:")
 print(random_search.best_score_)
-# accuracy test result was 0.4435628206657916 in this case which is low
-# params : {'n_estimators': 600, 'min_samples_split': 10, 'min_samples_leaf': 4,
- 'max_features': 'sqrt', 'max_depth': 20, 'bootstrap': False}
-"""
-
-# try Grid search cross validation
 
 # Create the parameter grid based on the results of random search
-bootstrap = [False]
-max_depth = [10, 20, 30]
+max_depth = [5, 10, 15]
 max_features = ['sqrt']
-min_samples_leaf = [4, 6, 8]
-min_samples_split = [10, 15, 20]
-n_estimators = [600]
+min_samples_leaf = [2]
+min_samples_split = [50, 100]
+n_estimators = [800]
+learning_rate = [.1, .5]
+subsample = [1.]
 
 param_grid = {
-    'bootstrap': bootstrap,
     'max_depth': max_depth,
     'max_features': max_features,
     'min_samples_leaf': min_samples_leaf,
     'min_samples_split': min_samples_split,
-    'n_estimators': n_estimators
+    'n_estimators': n_estimators,
+    'learning_rate': learning_rate,
+    'subsample': subsample
+
 }
 
 # Create a base model
-rfc = RandomForestClassifier(random_state=8)
+gbc = GradientBoostingClassifier(random_state=8)
+
+# Manually create the splits in CV in order to be able to fix a random_state (GridSearchCV doesn't have that argument)
 cv_sets = ShuffleSplit(n_splits = 3, test_size = .33, random_state = 8)
 
-# grid search model
-grid_search = GridSearchCV(estimator=rfc,
+# Instantiate the grid search model
+grid_search = GridSearchCV(estimator=gbc,
                            param_grid=param_grid,
                            scoring='accuracy',
                            cv=cv_sets,
@@ -133,39 +134,18 @@ grid_search.fit(features_train, labels_train)
 
 print("The best hyperparameters from Grid Search are:")
 print(grid_search.best_params_)
+print("")
 print("The mean accuracy of a model with these hyperparameters is:")
 print(grid_search.best_score_)
 
-"""
-improved results of accuracy : 0.4494773519163762
-params : {'bootstrap': False, 'max_depth': 10, 'max_features': 'sqrt',
-    'min_samples_leaf': 4, 'min_samples_split': 20, 'n_estimators': 600}
-"""
+best_gbc = grid_search.best_estimator_
+print(best_gbc)
 
+gbc_pred = best_gbc.predict(features_test)
 
-rfc_chosen = grid_search.best_estimator_
-# fitting model for training
-rfc_chosen.fit(features_train, labels_train)
-rfc_pred = rfc_chosen.predict(features_test)
-
-# comparing the training and test accuracies
+# Training accuracy
 print("The training accuracy is: ")
-print(accuracy_score(labels_train, rfc_chosen.predict(features_train)))
-
+print(accuracy_score(labels_train, best_gbc.predict(features_train)))
+# Test accuracy
 print("The test accuracy is: ")
-print(accuracy_score(labels_test, rfc_pred))
-
-base_model = RandomForestClassifier(random_state = 8)
-base_model.fit(features_train, labels_train)
-print(accuracy_score(labels_test, base_model.predict(features_test)))
-
-rfc_chosen.fit(features_train, labels_train)
-print(accuracy_score(labels_test, rfc_chosen.predict(features_test)))
-
-"""
-Results for this prediction model: 
-Training accuracy: 
-0.673963133640553
-Test accuracy: 
-0.44155844155844154
-"""
+print(accuracy_score(labels_test, gbc_pred))
